@@ -58,6 +58,7 @@ services:
     environment:
       <<: *kafka-environment
       KAFKA_ADVERTISED_PORT: 8001
+      KAFKA_BROKER_ID: 1
 
   kafka-2:
     <<: *kafka-base
@@ -66,6 +67,7 @@ services:
     environment:
       <<: *kafka-environment
       KAFKA_ADVERTISED_PORT: 8002
+      KAFKA_BROKER_ID: 2
 
   kafka-3:
     <<: *kafka-base
@@ -74,6 +76,7 @@ services:
     environment:
       <<: *kafka-environment
       KAFKA_ADVERTISED_PORT: 8003
+      KAFKA_BROKER_ID: 3
 
 networks:
   kafka-internal:

@@ -42,6 +42,8 @@ To subscribe to a topic named `events`, type:
 
 As before, you can also subscribe to another topic.
 
+You can run multiple subscribers subscribing to the same or different topics.
+
 ### Publish to a topic
 
 To publish to a topic named `events`, open another terminal window and type:
@@ -53,6 +55,8 @@ To publish to a topic named `events`, open another terminal window and type:
 Then type a message and press Enter.
 
 If you have the subscriber from the previous step open in another terminal window, you should see the message there.
+
+Similar to subscribers, you can run multiple publishers publishing to the same or different topics.
 
 ### Stop and remove the containers
 

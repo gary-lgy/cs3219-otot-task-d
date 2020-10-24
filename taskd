@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
+set -eu
+
 ACTION="$1"
 PROJECT_NAME="kafka-cluster-demo"
 
 if [ -z "$ACTION" ]; then
-    echo "Please specify an action: $0 (up | down | create | pub | sub | zkStatus)"
+    echo "Please specify an action: $0 (up | down | zkStatus | stop | create | describe | pub | sub)"
     exit 1
 fi
 
-if ! [[ "$ACTION" =~ ^(up|down|create|pub|sub|zkStatus)$ ]]; then
+if ! [[ "$ACTION" =~ ^(up|down|zkStatus|stop|create|describe|pub|sub)$ ]]; then
     echo "Unknown action $ACTION"
     exit 1
 fi
@@ -36,32 +38,55 @@ if [ "$ACTION" = "zkStatus" ]; then
     exit 0
 fi
 
-# Get topic name
-if [[ "$ACTION" =~ ^(create|pub|sub)$ ]]; then
-    TOPIC="$2"
-    if [ -z "$TOPIC" ]; then
-        echo "Usage: $0 $ACTION TOPIC"
+# Stop a single Kafka node to test failover
+if [ "$ACTION" = "stop" ]; then
+    node="$2"
+    if ! [[ "$node" =~ ^(1|2|3)$ ]]; then
+        echo "Usage: $0 $ACTION (1 | 2 | 3)"
         exit 1
     fi
+    node_name="kafka-${node}"
+    echo "Stopping ${node_name}"
+    docker-compose --project-name "$PROJECT_NAME" stop "$node_name"
+    exit 0
 fi
 
-if [ "$ACTION" = "create" ]; then
+# The rest of the actions require a topic
+
+# Get topic name
+TOPIC="$2"
+if [ -z "$TOPIC" ]; then
+    echo "Usage: $0 $ACTION TOPIC"
+    exit 1
+fi
+
+if [ "$ACTION" = "describe" ]; then
+    docker run --rm -i --net=host \
+        wurstmeister/kafka kafka-topics.sh \
+        --describe \
+        --zookeeper localhost:2181 \
+        --topic "$TOPIC" \
+        exit 0
+elif [ "$ACTION" = "create" ]; then
     echo "Creating topic \"$TOPIC\""
-    docker exec -it "${PROJECT_NAME}_kafka-1_1" kafka-topics.sh \
+    docker run --rm -i --net=host \
+        wurstmeister/kafka kafka-topics.sh \
         --create \
-        --zookeeper zookeeper-1:2181 \
+        --zookeeper localhost:2181 \
         --replication-factor 3 \
         --partitions 1 \
         --topic "$TOPIC"
 elif [ "$ACTION" = "pub" ]; then
     echo "Type to publish to topic \"$TOPIC\""
-    docker exec -it "${PROJECT_NAME}_kafka-1_1" kafka-console-producer.sh \
+    docker run --rm -i --net=host \
+        wurstmeister/kafka kafka-console-producer.sh \
         --topic "$TOPIC" \
-        --bootstrap-server localhost:9092
+        --bootstrap-server localhost:8001
 elif [ "$ACTION" = "sub" ]; then
     echo "Receiving messages from topic \"$TOPIC\""
-    docker exec -it "${PROJECT_NAME}_kafka-1_1" kafka-console-consumer.sh \
+    docker run --rm -i --net=host \
+        wurstmeister/kafka kafka-console-consumer.sh \
         --topic "$TOPIC" \
         --from-beginning \
-        --bootstrap-server localhost:9092
+        --bootstrap-server localhost:8001
 fi
