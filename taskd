@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+ACTION="$1"
+PROJECT_NAME="kafka-cluster-demo"
+
+if [ -z "$ACTION" ]; then
+    echo "Please specify an action: $0 (up | down | create | pub | sub)"
+    exit 1
+fi
+
+if ! [[ "$ACTION" =~ ^(up|down|create|pub|sub)$ ]]; then
+    echo "Unknown action $ACTION"
+    exit 1
+fi
+
+# Spin up the containers
+if [ "$ACTION" = "up" ]; then
+    docker-compose --project-name "$PROJECT_NAME" up
+    exit 0
+fi
+
+# Stop up the containers
+if [ "$ACTION" = "down" ]; then
+    docker-compose --project-name "$PROJECT_NAME" down
+    exit 0
+fi
+
+# Get topic name
+if [[ "$ACTION" =~ ^(create|pub|sub)$ ]]; then
+    TOPIC="$2"
+    if [ -z "$TOPIC" ]; then
+        echo "Usage: $0 $ACTION TOPIC"
+        exit 1
+    fi
+fi
+
+if [ "$ACTION" = "create" ]; then
+    echo "Creating topic \"$TOPIC\""
+    docker exec -it "${PROJECT_NAME}_kafka1_1" kafka-topics.sh \
+        --create \
+        --zookeeper zookeeper:2181 \
+        --replication-factor 3 \
+        --partitions 1 \
+        --topic "$TOPIC"
+elif [ "$ACTION" = "pub" ]; then
+    echo "Type to publish to topic \"$TOPIC\""
+    docker exec -it "${PROJECT_NAME}_kafka1_1" kafka-console-producer.sh \
+        --topic "$TOPIC" \
+        --bootstrap-server localhost:9092
+elif [ "$ACTION" = "sub" ]; then
+    echo "Receiving messages from topic \"$TOPIC\""
+    docker exec -it "${PROJECT_NAME}_kafka1_1" kafka-console-consumer.sh \
+        --topic "$TOPIC" \
+        --from-beginning \
+        --bootstrap-server localhost:9092
+fi
