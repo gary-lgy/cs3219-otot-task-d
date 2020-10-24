@@ -1,0 +1,40 @@
+version: "3.4"
+
+x-kafka-base: &kafka-base
+  image: wurstmeister/kafka
+
+x-kafka-environment: &kafka-environment
+  KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka1:
+    <<: *kafka-base
+    ports:
+      - "8001:9092"
+    environment:
+      <<: *kafka-environment
+      KAFKA_ADVERTISED_PORT: 8001
+
+  kafka2:
+    <<: *kafka-base
+    ports:
+      - "8002:9092"
+    environment:
+      <<: *kafka-environment
+      KAFKA_ADVERTISED_PORT: 8002
+
+  kafka3:
+    <<: *kafka-base
+    ports:
+      - "8003:9092"
+    environment:
+      <<: *kafka-environment
+      KAFKA_ADVERTISED_PORT: 8003
+
+# TODO: any number of nodes
