@@ -2,6 +2,8 @@ version: "3.4"
 
 x-kafka-base: &kafka-base
   image: wurstmeister/kafka
+  networks:
+    - kafka-internal
 
 x-kafka-environment: &kafka-environment
   KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -12,6 +14,8 @@ services:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
+    networks:
+      - kafka-internal
 
   kafka1:
     <<: *kafka-base
@@ -37,4 +41,6 @@ services:
       <<: *kafka-environment
       KAFKA_ADVERTISED_PORT: 8003
 
-# TODO: any number of nodes
+networks:
+  kafka-internal:
+    driver: bridge
