@@ -4,11 +4,11 @@ ACTION="$1"
 PROJECT_NAME="kafka-cluster-demo"
 
 if [ -z "$ACTION" ]; then
-    echo "Please specify an action: $0 (up | down | create | pub | sub)"
+    echo "Please specify an action: $0 (up | down | create | pub | sub | zkStatus)"
     exit 1
 fi
 
-if ! [[ "$ACTION" =~ ^(up|down|create|pub|sub)$ ]]; then
+if ! [[ "$ACTION" =~ ^(up|down|create|pub|sub|zkStatus)$ ]]; then
     echo "Unknown action $ACTION"
     exit 1
 fi
@@ -25,6 +25,17 @@ if [ "$ACTION" = "down" ]; then
     exit 0
 fi
 
+# Check ZooKeeper ensemble status
+if [ "$ACTION" = "zkStatus" ]; then
+    for i in 1 2 3; do
+        zooKeeperNode="${PROJECT_NAME}_zookeeper-${i}_1"
+        echo "======"
+        echo "$zooKeeperNode"
+        docker exec -it "$zooKeeperNode" ./bin/zkServer.sh status
+    done
+    exit 0
+fi
+
 # Get topic name
 if [[ "$ACTION" =~ ^(create|pub|sub)$ ]]; then
     TOPIC="$2"
@@ -36,20 +47,20 @@ fi
 
 if [ "$ACTION" = "create" ]; then
     echo "Creating topic \"$TOPIC\""
-    docker exec -it "${PROJECT_NAME}_kafka1_1" kafka-topics.sh \
+    docker exec -it "${PROJECT_NAME}_kafka-1_1" kafka-topics.sh \
         --create \
-        --zookeeper zookeeper:2181 \
+        --zookeeper zookeeper-1:2181 \
         --replication-factor 3 \
         --partitions 1 \
         --topic "$TOPIC"
 elif [ "$ACTION" = "pub" ]; then
     echo "Type to publish to topic \"$TOPIC\""
-    docker exec -it "${PROJECT_NAME}_kafka1_1" kafka-console-producer.sh \
+    docker exec -it "${PROJECT_NAME}_kafka-1_1" kafka-console-producer.sh \
         --topic "$TOPIC" \
         --bootstrap-server localhost:9092
 elif [ "$ACTION" = "sub" ]; then
     echo "Receiving messages from topic \"$TOPIC\""
-    docker exec -it "${PROJECT_NAME}_kafka1_1" kafka-console-consumer.sh \
+    docker exec -it "${PROJECT_NAME}_kafka-1_1" kafka-console-consumer.sh \
         --topic "$TOPIC" \
         --from-beginning \
         --bootstrap-server localhost:9092

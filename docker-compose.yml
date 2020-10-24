@@ -1,23 +1,57 @@
 version: "3.4"
 
+# Common configs among replicas
+x-zookeeper-base: &zookeeper-base
+  image: zookeeper
+  networks:
+    - kafka-internal
+
+x-zookeeper-environment: &zookeeper-environment
+  ZOO_SERVERS: server.1=zookeeper-1:2888:3888;2181 server.2=zookeeper-2:2888:3888;2181 server.3=zookeeper-3:2888:3888;2181
+
+
 x-kafka-base: &kafka-base
   image: wurstmeister/kafka
   networks:
     - kafka-internal
+  depends_on:
+    - zookeeper-1
+    - zookeeper-2
+    - zookeeper-3
 
 x-kafka-environment: &kafka-environment
-  KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
   HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
 
 services:
-  zookeeper:
-    image: wurstmeister/zookeeper
+  zookeeper-1:
+    <<: *zookeeper-base
+    hostname: zookeeper-1
     ports:
       - "2181:2181"
-    networks:
-      - kafka-internal
+    environment:
+      <<: *zookeeper-environment
+      ZOO_MY_ID: 1
 
-  kafka1:
+  zookeeper-2:
+    <<: *zookeeper-base
+    hostname: zookeeper-2
+    ports:
+      - "2182:2181"
+    environment:
+      <<: *zookeeper-environment
+      ZOO_MY_ID: 2
+
+  zookeeper-3:
+    <<: *zookeeper-base
+    hostname: zookeeper-3
+    ports:
+      - "2183:2181"
+    environment:
+      <<: *zookeeper-environment
+      ZOO_MY_ID: 3
+
+  kafka-1:
     <<: *kafka-base
     ports:
       - "8001:9092"
@@ -25,7 +59,7 @@ services:
       <<: *kafka-environment
       KAFKA_ADVERTISED_PORT: 8001
 
-  kafka2:
+  kafka-2:
     <<: *kafka-base
     ports:
       - "8002:9092"
@@ -33,7 +67,7 @@ services:
       <<: *kafka-environment
       KAFKA_ADVERTISED_PORT: 8002
 
-  kafka3:
+  kafka-3:
     <<: *kafka-base
     ports:
       - "8003:9092"

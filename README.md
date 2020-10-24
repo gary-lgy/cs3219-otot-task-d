@@ -1,6 +1,6 @@
 # Kafka cluster demo
 
-Multi-node fail-safe Kafka cluster with Zookeeper, deployed in Docker.
+Kafka cluster with Zookeeper ensemble, deployed in Docker.
 
 ## Running the demo
 
