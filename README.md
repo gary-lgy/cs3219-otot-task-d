@@ -1,4 +1,4 @@
-# Kafka cluster demo
+# Kafka Cluster Failover Demo
 
 Kafka cluster with Zookeeper ensemble, deployed in Docker.
 
@@ -22,8 +22,6 @@ chmod +x taskd
 
 ### Start the containers
 
-In another terminal window, type:
-
 ```bash
 ./taskd up
 ```
@@ -32,9 +30,19 @@ This will spin up both the 3-node ZooKeeper ensemble and 3-node Kafka cluster.
 
 The ZooKeeper servers are reachable at host ports 2181, 2182, and 2183. The Kafka brokers are reachable at host ports 8001, 8002, and 8003.
 
+### View ZooKeeper Ensemble status (just FYI)
+
+To view the ZooKeeper ensemble status, run:
+
+```bash
+./taskd zkStatus
+```
+
+This should indicate which instance is the leader (not to be confused with the Kafka leader that we will see later).
+
 ### Create a topic
 
-To create a topic named `events`, type (in yet another terminal window):
+To create a topic named `events`, open another terminal window and type:
 
 ```bash
 ./taskd create events
@@ -42,9 +50,9 @@ To create a topic named `events`, type (in yet another terminal window):
 
 You can also create topics other than `events` by changing the topic name in the command.
 
-### Subscribe to a topic
+### Subscribe to the topic
 
-To subscribe to a topic named `events`, type:
+To subscribe to the topic we just created, run:
 
 ```bash
 ./taskd sub events
@@ -54,9 +62,9 @@ As before, you can also subscribe to another topic.
 
 You can run multiple subscribers subscribing to the same or different topics.
 
-### Publish to a topic
+### Publish to the topic
 
-To publish to a topic named `events`, open another terminal window and type:
+To publish to the `events` topic, open another terminal window and type:
 
 ```bash
 ./taskd pub events
@@ -68,9 +76,9 @@ If you have the subscriber from the previous step open in another terminal windo
 
 Similar to subscribers, you can run multiple publishers publishing to the same or different topics.
 
-### Describe a topic
+### Describe the topic
 
-To view information related to a topic, run:
+To view information related to the topic, open another terminal window and type:
 
 ```bash
 ./taskd describe events
@@ -78,17 +86,23 @@ To view information related to a topic, run:
 
 Among other things, the returned information includes the leader broker of the topic (which should be a number from 1 to 3)
 
-### Kill the leader broker of a topic
+### Kill the leader broker of the topic
 
 To verify that the topic can still work properly even after its leader broker dies, let's kill its leader broker.
 
 Without closing the subscriber and publisher, run:
 
 ```bash
-./taskd stop NODE_ID
+./taskd stop BROKER_ID
 ```
 
-Where `NODE_ID` is the ID of the leader broker we discovered from the last step.
+Where `BROKER_ID` is the ID of the leader broker we discovered from the last step.
+
+For example, if the output of the previous step is this:
+
+![Describe Topic Output](./describe_topic_output_before_kill.png)
+
+Then the leader broker ID is 2. To kill it, we should run:
 
 ```bash
 ./taskd stop 2
@@ -97,6 +111,10 @@ Where `NODE_ID` is the ID of the leader broker we discovered from the last step.
 ### Test that the topic still works
 
 Now, run `./taskd describe events` again to verify that a new leader has been elected for the topic.
+
+A possible output is:
+
+![Describe Topic Output After Killing Leader](./describe_topic_output_after_kill.png)
 
 Try publishing to the topic. The subscriber should still be able to receive the messages.
 
