@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 
+ARG_ONE="$1"
+ARG_TWO="$2"
+
 set -eu
 
-ACTION="$1"
-PROJECT_NAME="kafka-cluster-demo"
-
-if [ -z "$ACTION" ]; then
-    echo "Please specify an action: $0 (up | down | zkStatus | stop | create | describe | pub | sub)"
+if [ -z "$ARG_ONE" ]; then
+    echo "Usage: $0 (up | down | zkStatus | stop | create | describe | pub | sub)"
     exit 1
 fi
 
+ACTION="$ARG_ONE"
+PROJECT_NAME="kafka-cluster-demo"
+
 if ! [[ "$ACTION" =~ ^(up|down|zkStatus|stop|create|describe|pub|sub)$ ]]; then
     echo "Unknown action $ACTION"
+    echo "Usage: $0 (up | down | zkStatus | stop | create | describe | pub | sub)"
     exit 1
 fi
 
@@ -40,7 +44,7 @@ fi
 
 # Stop a single Kafka node to test failover
 if [ "$ACTION" = "stop" ]; then
-    node="$2"
+    node="$ARG_TWO"
     if ! [[ "$node" =~ ^(1|2|3)$ ]]; then
         echo "Usage: $0 $ACTION (1 | 2 | 3)"
         exit 1
@@ -54,7 +58,7 @@ fi
 # The rest of the actions require a topic
 
 # Get topic name
-TOPIC="$2"
+TOPIC="$ARG_TWO"
 if [ -z "$TOPIC" ]; then
     echo "Usage: $0 $ACTION TOPIC"
     exit 1
